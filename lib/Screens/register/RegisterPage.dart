@@ -24,13 +24,16 @@ class _RegisterPageState extends State<RegisterPage> {
       body: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is AuthSuccess) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                content: Text("Registration successful! Please login.")));
+
+            if (state.role == "RedirectToLogin") {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                Navigator.pushReplacementNamed(context, '/');
+              });
+            } else {
               Navigator.pushReplacementNamed(context, '/user');
-            });
-          } else if (state is AuthFailure) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message)),
-            );
+            }
           }
         },
         builder: (context, state) {

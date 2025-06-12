@@ -74,11 +74,29 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         return;
       }
 
-      emit(AuthSuccess(role: "User"));
+      if (success) {
+        emit(AuthSuccess(
+            role: "RedirectToLogin")); // ✅ This will trigger navigation
+      }
+      // emit(AuthSuccess(role: "RedirectToLogin"));
     } on DioException catch (e) {
-      final msg =
-          e.response?.data["message"] ?? e.message ?? "Registration failed";
-      emit(AuthFailure(msg));
+      if (e.response != null && e.response?.statusCode == 400) {
+        final errorData = e.response?.data;
+
+        if (errorData != null && errorData["errors"] != null) {
+          final errors = errorData["errors"] as Map<String, dynamic>;
+          final messages = errors.entries
+              .expand((entry) => (entry.value as List).map((e) => "- $e"))
+              .join("\n");
+          emit(AuthFailure("Validation errors:\n$messages"));
+        } else {
+          emit(AuthFailure("Bad request"));
+        }
+      } else {
+        final msg =
+            e.response?.data["message"] ?? e.message ?? "Registration failed";
+        emit(AuthFailure(msg));
+      }
     } on SocketException {
       emit(AuthFailure("No internet connection. Please check your network."));
     } catch (e) {
